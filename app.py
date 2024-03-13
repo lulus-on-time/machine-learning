@@ -2,11 +2,51 @@ import pickle
 import numpy as np
 import pandas as pd
 from flask import Flask, request
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
+
+# database connection
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:postgres@<>:5432"
+db = SQLAlchemy(app)
+migrate = Migrate(app,db)
 
+#entities
+class AccessPoint(db.Model):
+    __tablename__ = 'AccessPoint'
+    id = db.Column(db.Integer, primary_key=True)
+    bssid = db.Column(db.String(), unique=True)
+    ssid = db.Column(db.String())
+    description = db.Column(db.String())
+    # fingerprints ?? listofFngerprintDetail
+    # coordinate Coordinate ?? add another class "Coordinate"? 
+    # coordinateId ?? same as above
+
+    def __repr__(self):
+        return f"<Car {self.bssid}>"
+
+class Fingerprint(db.Model):
+    __tablename__ = 'Fingerprint'
+    id = db.Column(db.Integer, primary_key=True)
+    createdAt = db.Column(db.DateTime, default=now())
+    # fingerprintDetails ?? listofFngerprintDetail
+    location = db.Column(db.String)
+
+class FingerprintDetail(db.Model):
+    __tablename__ = 'FingerprintDetail'
+    id = db.Column(db.Integer, primary_key=True)
+    # fp FP ?? add relation to another class FP, how syntax? 
+    fingerprintId = db.Column(db.Integer, unique=True)
+    # ap AcessPoint ?? add relation to another class AP, how syntax? 
+    bssid = db.Column(db.String)
+    rssi = db.Column(db.Float)
+
+# load model
 with open(models/model.pkl, "rb") as chosen_model:
     model = pickle.load(chosen_model)
+
+# features = db.findall()
 
 @app.route('/')
 def index():
@@ -20,5 +60,26 @@ def predict():
 
     return {}, 200
 
-# app.run(debug=True)
+@app.route('/train')
+def train():
+
+    return {}, 200
+
+@app.route('/aps', methods=['GET'])
+def read_aps():
+    aps = AccessPoint.query.all()
+    results = [
+        {
+            "bssid": AccessPoint.bssid,
+            "ssid": AccessPoint.ssid,
+            "description": AccessPoint.description,
+        }
+    for ap in aps ] 
+
+    return {"count": len(results), "aps":results}
+
+# is the code snippet above correct to read access point data?
+# what about the other entities?
+
+app.run(debug=True)
 
