@@ -1,7 +1,0 @@
-Flask==3.0.2
-numpy==1.26.4
-pandas==2.2.1
-scikit-learn==1.4.1.post1
-psycopg==3.1.18
-Flask-Migrate==4.0.7
-Flask-SQLAlchemy==3.1.1i
