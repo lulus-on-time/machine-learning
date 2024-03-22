@@ -4,10 +4,12 @@ import pandas as pd
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
+from flask_socketio import SocketIO
 
 # database connection
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:ta@localhost:5431"
+socketio = SocketIO(app)
 
 class Base(DeclarativeBase):
   pass
@@ -124,5 +126,15 @@ def read_aps():
 # is the code snippet above correct to read access point data?
 # what about the other entities?
 
+@socketio.on('connect')
+def handle_connect():
+    print('Connected to WebSocket server')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Disconnected from WebSocket server')
+
+
+# for development set to True
 app.run(debug=True)
 
