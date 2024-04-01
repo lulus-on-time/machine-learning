@@ -1,2 +1,5 @@
 env/
 .git
+.DS_Store
+.env
+__pycache__
