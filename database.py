@@ -6,60 +6,6 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 
-# from app import db
-# print("Hello")
-# for table_name in app.db.Model.metadata.tables:
-#     print(table_name)
-#     print("Hello")
-
-# with app.app_context():
-#     db.reflect()
-
-# class Base(DeclarativeBase):
-#   pass
-
-# db = SQLAlchemy(model_class=Base)
-# db.init_app(app)
-
-# with app.app_context():
-#     db.reflect()
-
-# class AccessPoint(db.Model):
-#     __table__ = db.Model.metadata.tables['AccessPoint']
-
-#     def __repr__(self):
-#         return self.id
-
-# class Coordinate(db.Model):
-#     __table__ = db.Model.metadata.tables['Coordinate']
-
-#     def __repr__(self):
-#         return self.id
-    
-# class Fingerprint(db.Model):
-#     __table__ = db.Model.metadata.tables['Fingerprint']
-
-#     def __repr__(self):
-#         return self.id
-    
-# class FingerprintDetail(db.Model):
-#     __table__ = db.Model.metadata.tables['FingerprintDetail']
-
-#     def __repr__(self):
-#         return self.id
-
-# class Floor(db.Model):
-#     __table__ = db.Model.metadata.tables['Floor']
-
-#     def __repr__(self):
-#         return self.id
-
-# class Room(db.Model):
-#     __table__ = db.Model.metadata.tables['Room']
-
-#     def __repr__(self):
-#         return self.id
-
 # Entities
 # class AccessPoint(db.Model):
 #     __tablename__ = 'AccessPoint'
