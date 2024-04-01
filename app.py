@@ -1,9 +1,4 @@
-import pickle 
-import numpy as np
-import pandas as pd
-from flask import Flask, request
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
+from flask import Flask
 from models import execute
 from database import db
 from dotenv import load_dotenv
@@ -36,44 +31,21 @@ if __name__ == '__main__':
     # Enable CORS for all origins
     socketio.run(app, debug=True)
 
+@app.route('/train')
+def train():
+    ap = classes['AccessPoint']
+    # ap.id
+    print(ap.id)
 
+    return {}, 200
 
-
-
-
-# @app.route('/')
-# def index():
-#     return{
-#         "status":"SUCCESS",
-#         "message":"Service is up"
-#     }, 200
-
-# @app.route('/predict')
-# def predict():
-#     return {}, 200
-
-# @app.route('/train')
-# def train():
-
-#     return {}, 200
-
-
-# @app.route('/aps', methods=['GET'])
-# def read_aps():
-#     aps = AccessPoint.query.all()
-#     results = [
-#         {
-#             "bssid": AccessPoint.bssid,
-#             "ssid": AccessPoint.ssid,
-#             "description": AccessPoint.description,
-#         }
-#     for ap in aps ] 
-
-#     return {"count": len(results), "aps":results}
-
-#         # is the code snippet above correct to read access point data?
-#         # what about the other entities?
-
-# # for development set to True
-# # app.run(debug=True)
-
+@app.route('/aps', methods=['GET'])
+def read_aps():
+    aps = AccessPoint.query.all()
+    results = [
+        {
+            "bssid": AccessPoint.bssid,
+            "ssid": AccessPoint.ssid,
+            "description": AccessPoint.description,
+        }
+    for ap in aps ] 
