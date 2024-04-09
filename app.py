@@ -6,6 +6,8 @@ import os
 from flask_socketio import SocketIO
 from handle_connection import attachListener
 from flask_cors import CORS
+from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
 
 load_dotenv()
 
@@ -29,6 +31,7 @@ attachListener(socketio)
 
 if __name__ == '__main__':
     # Enable CORS for all origins
+    # pywsgi.WSGIServer(("", 5000), app, handler_class=WebSocketHandler).serve_forever()
     socketio.run(app, debug=True)
 
 @app.route('/train')

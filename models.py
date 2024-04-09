@@ -45,4 +45,3 @@ def execute():
         "Floor": Floor,
         "Room":Room
     }
-# AccessPoint, Coordinate, Fingerprint, FingerprintDetail, Floor, Room
