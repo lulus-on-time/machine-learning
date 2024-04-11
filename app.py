@@ -1,5 +1,5 @@
 from flask import Flask
-from models import execute
+from classes import execute
 from database import db
 from dotenv import load_dotenv
 import os
@@ -21,6 +21,7 @@ with app.app_context():
     db.reflect()
 
 classes = execute()
+# print(classes['Floor'].id)
 
 # initialize socket io
 socketio = SocketIO(app)
@@ -29,26 +30,28 @@ socketio.init_app(app, cors_allowed_origins="*")
 
 attachListener(socketio)
 
+# @app.route('/train')
+# def train():
+#     ap = classes['AccessPoint']
+#     # ap.id
+#     print(ap.id)
+
+#     return {}, 200
+
+# @app.route('/aps', methods=['GET'])
+# def read_aps():
+
+#     aps = AccessPoint.query.all()
+#     results = [
+#         {
+#             "bssid": AccessPoint.bssid,
+#             "ssid": AccessPoint.ssid,
+#             "description": AccessPoint.description,
+#         }
+#     for ap in aps ] 
+
+
 if __name__ == '__main__':
     # Enable CORS for all origins
     # pywsgi.WSGIServer(("", 5000), app, handler_class=WebSocketHandler).serve_forever()
     socketio.run(app, debug=True)
-
-@app.route('/train')
-def train():
-    ap = classes['AccessPoint']
-    # ap.id
-    print(ap.id)
-
-    return {}, 200
-
-@app.route('/aps', methods=['GET'])
-def read_aps():
-    aps = AccessPoint.query.all()
-    results = [
-        {
-            "bssid": AccessPoint.bssid,
-            "ssid": AccessPoint.ssid,
-            "description": AccessPoint.description,
-        }
-    for ap in aps ] 

@@ -5,10 +5,13 @@ from flask_socketio import send
 import logging
 from flask_socketio import SocketIO
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.metrics import make_scorer, accuracy_score
+from models.call_model import model, predict_model, train_model
+from classes import execute
 
 '''
 TODOS:
-    - [DONE?] Load the model (pickle.load) as the global variable so it can be accessed
+    - [DONE] Load the model (pickle.load) as the global variable so it can be accessed
         by 'predict' when it's prediction time and 'train' when it's model replacing time.
         The time required to load a model is very long. Hence, the loading process should be
         done outside of any event.
@@ -20,9 +23,8 @@ TODOS:
         o [NOT DONE] How to access the database models in this file from 'classes' variable that was called in app.py?
 '''
 
-model = None
-with open("models/knn.pkl", "rb") as f:
-    model = pickle.load(f)
+# access_point = classes['AccessPoint']
+# print(access_point)
 
 def attachListener(socketio):
 
@@ -34,16 +36,19 @@ def attachListener(socketio):
     def handle_disconnect():
         print('Client disconnected')
 
+    @socketio.on('train')
+    def train(data):
+        if data['command'] == 'Train!':
+            train_model()
+
     @socketio.on('predict')
     def predict(data):
-        # console.log("Hello")
         print(str(data))
+        print()
 
         # Initialize an array filled with zeros
         num_bssids = len(access_points)
         rssi_values = np.zeros(num_bssids)
-
-        # calibrated_model = CalibratedClassifierCV(model, method='sigmoid', cv='prefit')
 
         # Populate the array according to the mapping from the access_points dictionary
         for entry in data["data"]:
@@ -54,9 +59,12 @@ def attachListener(socketio):
 
         # Reshape the array into a 2D array with a single row
         rssi_values_2d = rssi_values.reshape(1, -1)
-        
-        prediction = model.predict(rssi_values_2d)
-        
-        print(prediction)
-        send(prediction[0])
+        predict_values = predict_model(rssi_values_2d)
+
+        result = {
+            "prediction": predict_values
+        }
+
+        print(result)
+        send(result)
     
