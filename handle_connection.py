@@ -6,7 +6,7 @@ import logging
 from flask_socketio import SocketIO
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import make_scorer, accuracy_score
-from models.call_model import model, predict_model, train_model
+from models.call_model import model, predict_model, train_model, update_bssid
 from classes import execute
 
 '''
@@ -43,28 +43,9 @@ def attachListener(socketio):
 
     @socketio.on('predict')
     def predict(data):
-        print(str(data))
-        print()
-
-        # Initialize an array filled with zeros
-        num_bssids = len(access_points)
-        rssi_values = np.zeros(num_bssids)
-
-        # Populate the array according to the mapping from the access_points dictionary
-        for entry in data["data"]:
-            bssid = entry["bssid"]
-            if bssid in access_points:
-                index = access_points[bssid]
-                rssi_values[index] = entry["rssi"]
-
-        # Reshape the array into a 2D array with a single row
-        rssi_values_2d = rssi_values.reshape(1, -1)
-        predict_values = predict_model(rssi_values_2d)
-
+        predict_values = predict_model(data)
         result = {
             "prediction": predict_values
         }
-
         print(result)
         send(result)
-    

@@ -8,6 +8,7 @@ from handle_connection import attachListener
 from flask_cors import CORS
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
+from sqlalchemy import text
 
 load_dotenv()
 
@@ -21,7 +22,6 @@ with app.app_context():
     db.reflect()
 
 classes = execute()
-# print(classes['Floor'].id)
 
 # initialize socket io
 socketio = SocketIO(app)
@@ -29,27 +29,6 @@ CORS(app, origins='*')
 socketio.init_app(app, cors_allowed_origins="*")
 
 attachListener(socketio)
-
-# @app.route('/train')
-# def train():
-#     ap = classes['AccessPoint']
-#     # ap.id
-#     print(ap.id)
-
-#     return {}, 200
-
-# @app.route('/aps', methods=['GET'])
-# def read_aps():
-
-#     aps = AccessPoint.query.all()
-#     results = [
-#         {
-#             "bssid": AccessPoint.bssid,
-#             "ssid": AccessPoint.ssid,
-#             "description": AccessPoint.description,
-#         }
-#     for ap in aps ] 
-
 
 if __name__ == '__main__':
     # Enable CORS for all origins
