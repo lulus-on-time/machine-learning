@@ -1,31 +1,18 @@
+from flask import Flask
 from data.aps import access_points
 import pickle 
 import numpy as np
-from flask_socketio import send
+from flask_socketio import send, emit, SocketIO
 import logging
-from flask_socketio import SocketIO
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import make_scorer, accuracy_score
-from models.call_model import model, predict_model, train_model, update_bssid
+from models.call_model import model, predict_model, train_model, update_bssid, build_df
 from classes import execute
+from thread import flask_context_thread
+import threading
+import concurrent.futures
+from celery.result import AsyncResult
 
-'''
-TODOS:
-    - [DONE] Load the model (pickle.load) as the global variable so it can be accessed
-        by 'predict' when it's prediction time and 'train' when it's model replacing time.
-        The time required to load a model is very long. Hence, the loading process should be
-        done outside of any event.
-    - for train & retrain purposes:
-        o [NOT DONE] fill the db with dummy data to simulate data fetching.
-            - fill 'Room' -> 'Coordinate' -> 'AccessPoint' -> 'Fingerprint' -> 'FingerprintDetail'
-            - syntax:
-                INSERT INTO "AccessPoint" VALUES (0,'as:we:4r:56:56','hotspot ui','',0);
-        o [NOT DONE] How to access the database models in this file from 'classes' variable that was called in app.py?
-'''
-
-# access_point = classes['AccessPoint']
-# print(access_point)
-
+# run()
 def attachListener(socketio):
 
     @socketio.on('connect')
@@ -38,14 +25,37 @@ def attachListener(socketio):
 
     @socketio.on('train')
     def train(data):
+        socketio.emit("message", "on training handler function")
         if data['command'] == 'Train!':
-            train_model()
+            task = train_model.delay()
+            print(task.task_id)
+            res = AsyncResult("efd33b19-e944-4230-b8a4-f2e94b8a5579")
+            res.ready()
+            
+        elif data['command'] == 'Test!':
+            build_df()
 
     @socketio.on('predict')
     def predict(data):
+        socketio.emit("message", "on predict handler function")
         predict_values = predict_model(data)
+
         result = {
             "prediction": predict_values
         }
-        print(result)
-        send(result)
+        # print(result)
+
+        emit('prediction_result', result)
+        # with concurrent.futures.ThreadPoolExecutor() as executor:
+        #     future = executor.submit(predict_model, data)
+        #     result = future.result()  # Wait for the prediction task to complete
+        #     # Emit the prediction result to the client
+        #     socketio.emit('prediction_result', result)
+
+        # predict_thread = threading.Thread(target=flask_context_thread, args=(lambda: predict_model(data),))
+        # print(predict_thread)
+        # predict_thread.start()
+
+        # predict_thread.join()
+        # print(predict_thread)
+        # prediction_result = predict_thread.result() 

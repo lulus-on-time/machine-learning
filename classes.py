@@ -37,11 +37,39 @@ def execute():
         def __repr__(self):
             return self.id
     
+    class Network(db.Model):
+        __table__ = db.Model.metadata.tables['Network']
+
+        def __repr__(self):
+            return self.id
+        
+    class Schedule(db.Model):
+        __table__ = db.Model.metadata.tables['Schedule']
+
+        def __repr__(self):
+            return self.id
+        
+    class Subject(db.Model):
+        __table__ = db.Model.metadata.tables['Subject']
+
+        def __repr__(self):
+            return self.id
+                
+    class User(db.Model):
+        __table__ = db.Model.metadata.tables['User']
+
+        def __repr__(self):
+            return self.id
+    
     return {
         "AccessPoint": AccessPoint,
         "Coordinate": Coordinate,
         "Fingerprint": Fingerprint,
         "FingerprintDetail": FingerprintDetail,
         "Floor": Floor,
-        "Room":Room
+        "Room":Room,
+        "Network":Network,
+        "Schedule":Schedule,
+        "Subject":Subject,
+        "User":User
     }
