@@ -26,11 +26,13 @@ with app.app_context():
 classes = execute()
 
 # initialize socket io
-socketio = SocketIO(app, async_handlers=True, async_mode='gevent', logger=True, always_connect=True, message_queue='redis://localhost:6379/0')
+socketio = SocketIO(app, async_handlers=True, async_mode='threading', logger=True, always_connect=True, message_queue='redis://localhost:6379/0')
 CORS(app, origins='*')
 socketio.init_app(app, cors_allowed_origins="*")
 
 if __name__ == '__main__':
+    attachListener(socketio)
+    socketio.run(app, debug=True)
     # server = pywsgi.WSGIServer(("", 5000), app, handler_class=WebSocketHandler)
     
     # # Set the number of worker processes to 2
@@ -38,5 +40,4 @@ if __name__ == '__main__':
 
     # # Start the server
     # server.serve_forever()
-    attachListener(socketio)
-    socketio.run(app, debug=True)
+

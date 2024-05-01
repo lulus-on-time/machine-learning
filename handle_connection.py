@@ -27,25 +27,30 @@ def attachListener(socketio):
     def train(data):
         socketio.emit("message", "on training handler function")
         if data['command'] == 'Train!':
-            task = train_model.delay()
-            print(task.task_id)
-            res = AsyncResult("efd33b19-e944-4230-b8a4-f2e94b8a5579")
-            res.ready()
+            threading.Thread(target=train_model).start()
+            # task = train_model.delay()
+            # print(task.task_id)
+            # res = AsyncResult("efd33b19-e944-4230-b8a4-f2e94b8a5579")
+            # res.ready()
             
         elif data['command'] == 'Test!':
             build_df()
 
     @socketio.on('predict')
     def predict(data):
-        socketio.emit("message", "on predict handler function")
-        predict_values = predict_model(data)
+        threading.Thread(target=predict_model, args=(data, socketio)).start()
+        # socketio.emit("message", "on predict handler function")
+        # socketio.start_background_task(predict_model(data))
+        # print("yohoo")
 
-        result = {
-            "prediction": predict_values
-        }
+        # predict_values = predict_model(data)
+
+        # result = {
+        #     "prediction": predict_values
+        # }
         # print(result)
 
-        emit('prediction_result', result)
+        # emit('prediction_result', result)
         # with concurrent.futures.ThreadPoolExecutor() as executor:
         #     future = executor.submit(predict_model, data)
         #     result = future.result()  # Wait for the prediction task to complete

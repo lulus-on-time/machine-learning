@@ -10,6 +10,7 @@ import numpy as np
 from findmyself import app
 import gevent
 from celery import Celery
+import time
 import logging
 
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
@@ -84,7 +85,7 @@ def update_bssid():
 
     return updated_access_points
 
-@celery.task
+# @celery.task
 def train_model():
     
     print("--- Training session started ---")
@@ -121,7 +122,7 @@ def train_model():
         logging.info("Done")
         print("--- Training session completed ---")
 
-def predict_model(data):
+def predict_model(data, socketio):
     with app.app_context():
         print("--- Prediction session started ---")
         model = init_model()
@@ -154,4 +155,4 @@ def predict_model(data):
         print("--- Prediction session completed ---")
         # print("App name")
         # print(app.name) # = 'init_app'
-        return label_probabilities[:3]
+        socketio.emit("message", label_probabilities[:3])
