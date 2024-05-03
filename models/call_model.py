@@ -13,11 +13,11 @@ from celery import Celery
 import time
 import logging
 
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['RESULT_BACKEND'] = 'redis://localhost:6379/0'
-app.config['BROKER_CONNECTION_RETRY_ON_STARTUP'] = True 
-celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'], backend='redis://localhost:6379/0', include=['models.call_model'])
-celery.conf.update(app.config)
+# app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+# app.config['RESULT_BACKEND'] = 'redis://localhost:6379/0'
+# app.config['BROKER_CONNECTION_RETRY_ON_STARTUP'] = True 
+# celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'], backend='redis://localhost:6379/0', include=['models.call_model'])
+# celery.conf.update(app.config)
 
 access_points = {}
 def init_model():
