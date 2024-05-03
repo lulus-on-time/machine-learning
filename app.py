@@ -16,7 +16,7 @@ from findmyself import app
 load_dotenv()
 # database connection
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI', "postgresql://postgres:ta@localhost:5431")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI', "postgresql://postgres:findmyself123@34.101.69.150:5432")
 
 db.init_app(app)
 
@@ -26,7 +26,7 @@ with app.app_context():
 classes = execute()
 
 # initialize socket io
-socketio = SocketIO(app, async_handlers=True, async_mode='threading', logger=True, always_connect=True, message_queue='redis://localhost:6379/0')
+socketio = SocketIO(app, async_handlers=True, async_mode='threading', logger=True, always_connect=True)
 CORS(app, origins='*')
 socketio.init_app(app, cors_allowed_origins="*")
 

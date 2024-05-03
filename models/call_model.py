@@ -13,24 +13,35 @@ from celery import Celery
 import time
 import logging
 
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['RESULT_BACKEND'] = 'redis://localhost:6379/0'
-app.config['BROKER_CONNECTION_RETRY_ON_STARTUP'] = True 
-celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'], backend='redis://localhost:6379/0', include=['models.call_model'])
-celery.conf.update(app.config)
+# app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+# app.config['RESULT_BACKEND'] = 'redis://localhost:6379/0'
+# app.config['BROKER_CONNECTION_RETRY_ON_STARTUP'] = True 
+# celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'], backend='redis://localhost:6379/0', include=['models.call_model'])
+# celery.conf.update(app.config)
 
+global access_points
 access_points = {}
 def init_model():
-    with open("models/knn.pkl", "rb") as f:
-        model = pickle.load(f)
-    return model
+    try:
+        with open("models/knn.pkl", "rb") as f:
+            model = pickle.load(f)
+        return model
+    except Exception: 
+        print("knn.pkl not available in models folder")
+        return None
+
+def get_features():
+    try:
+        with open("models/features.pkl", "rb") as f:
+            features = pickle.load(f)
+        return features
+    except Exception:
+        print("features.pkl not available in models folder")
+        return []
 
 model = init_model()
-
-# def transform_rssi(rssi_dbm):
-#     # convert dbm to mw
-#     # Define the conversion function
-#     return 10 ** (rssi_dbm / 10)
+features = get_features()
+flag = False
 
 def build_df():
     data = fetch_data()
@@ -52,8 +63,6 @@ def build_df():
 
     df.drop(columns=['fingerprintId','locationId-fingerprintId'], inplace=True)
     df.columns.name=None
-    # print(df['locationId-fingerprintId'])
-    # print(df)
     return df
 
 def standardize(X):
@@ -75,13 +84,15 @@ def fetch_data():
         "network": network
     }
 
-def update_bssid():
-    data = fetch_data()
-    bssid = pd.DataFrame(data["network"].fetchall(), columns=data["network"].keys())['bssid'].to_list()
+def update_bssid(features):
+    # bssid = pd.DataFrame(data["network"].fetchall(), columns=data["network"].keys())['bssid'].to_list()
+    print(features)
     updated_access_points = {}
     
-    for index, bssid in enumerate(bssid):
-        updated_access_points[bssid] = index
+    count = 0
+    for feature in features:
+        updated_access_points[feature] = count
+        count = count + 1
 
     return updated_access_points
 
@@ -90,16 +101,18 @@ def train_model():
     
     print("--- Training session started ---")
     with app.app_context():
-
         df = build_df()
         X = standardize(df.drop(['locationId'], axis=1))
+        columns = df.columns.to_list()
+        columns.remove('locationId')
         y = df.locationId
 
         calibrated_knn = CalibratedClassifierCV(estimator = KNeighborsClassifier(), method='sigmoid')
         tuned_params = [
             {
-                'estimator__n_neighbors': [2,3,5,10,15],
+                'estimator__n_neighbors': [2],
             }
+                # 'estimator__n_neighbors': [2,3,5,10,15],
                 # 'estimator__weights': ['uniform', 'distance']
                 # 'estimator__algorithm': ['ball_tree', 'kd_tree','brute'],
                 # 'estimator__metric': ['cityblock', 'euclidean'],
@@ -119,14 +132,24 @@ def train_model():
         with open("models/knn.pkl", "wb") as f:
             pickle.dump(knn_tuned, f)
 
+        with open("models/features.pkl", "wb") as f:
+            pickle.dump(columns, f)
+
+        global model
+        global features
+        model = init_model()
+        features = get_features()
+        
         logging.info("Done")
         print("--- Training session completed ---")
 
 def predict_model(data, socketio):
     with app.app_context():
         print("--- Prediction session started ---")
-        model = init_model()
-        access_points = update_bssid()
+        if (model == None) or (len(features) < 1 ):
+            train_model()
+        
+        access_points = update_bssid(features)
         num_bssids = len(access_points)
         rssi_values = np.zeros(num_bssids)
 
@@ -153,6 +176,4 @@ def predict_model(data, socketio):
             label_probabilities.sort(key=lambda x: x["probability"], reverse=True)
         
         print("--- Prediction session completed ---")
-        # print("App name")
-        # print(app.name) # = 'init_app'
         socketio.emit("message", label_probabilities[:3])
