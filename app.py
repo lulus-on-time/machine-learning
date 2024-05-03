@@ -15,7 +15,7 @@ from findmyself import app
 # def run():
 load_dotenv(override=True)
 # database connection
-print(os.environ.get('DATABASE_URI', "postgresql://postgres:ta@localhost:5431"))
+print(os.environ.get('DATABASE_URI', "postgresql://postgres:findmyself123@34.101.69.150:5432"))
 
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI', "postgresql://postgres:findmyself123@34.101.69.150:5432")

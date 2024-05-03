@@ -110,11 +110,12 @@ def train_model():
         calibrated_knn = CalibratedClassifierCV(estimator = KNeighborsClassifier(), method='sigmoid')
         tuned_params = [
             {
-                'estimator__n_neighbors': [2,3,5,10,15],
-                'estimator__weights': ['uniform', 'distance'],
-                'estimator__algorithm': ['ball_tree', 'kd_tree','brute'],
-                'estimator__metric': ['cityblock', 'euclidean'],
+                'estimator__n_neighbors': [2]
             }      
+
+                #  'estimator__weights': ['uniform', 'distance'],
+                # 'estimator__algorithm': ['ball_tree', 'kd_tree','brute'],
+                # 'estimator__metric': ['cityblock', 'euclidean'],
         ]
 
         knn_tuned = GridSearchCV (
@@ -169,6 +170,7 @@ def predict_model(data, socketio):
         # Iterate over the predicted probabilities and corresponding class labels
         for probs in prediction_probabilities:
             for label, prob in zip(class_labels, probs):
+                label = int(label)
                 label_probabilities.append({"locationId": label, "probability": prob})
 
             # Sort the list based on probabilities in descending order
