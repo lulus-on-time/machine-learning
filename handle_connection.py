@@ -12,7 +12,6 @@ import threading
 import concurrent.futures
 from celery.result import AsyncResult
 
-# run()
 def attachListener(socketio):
 
     @socketio.on('connect')

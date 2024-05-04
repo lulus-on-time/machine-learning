@@ -71,6 +71,21 @@ def standardize(X):
     X_scaled = scaler.fit_transform(X) 
     return X_scaled
 
+def standardize_predict(X):
+    # Reshape the input array to a 2D array with a single column
+    X_2d = X.reshape(-1, 1)
+
+    # Initialize the StandardScaler
+    scaler = StandardScaler()
+
+    # Fit the scaler to the data and transform the X
+    X_2d_scaled = scaler.fit_transform(X_2d)
+
+    # Flatten the 2D array to get the standardized X
+    X_scaled = X_2d_scaled.flatten()
+
+    return X_scaled
+
 def fetch_data():
     network = db.session.execute(text('SELECT * FROM "Network"'))
     access_point = db.session.execute(text('SELECT * FROM "AccessPoint"'))
@@ -86,7 +101,7 @@ def fetch_data():
 
 def update_bssid(features):
     # bssid = pd.DataFrame(data["network"].fetchall(), columns=data["network"].keys())['bssid'].to_list()
-    print(features)
+    # print(features)
     updated_access_points = {}
     
     count = 0
@@ -140,7 +155,6 @@ def train_model():
         model = init_model()
         features = get_features()
         
-        logging.info("Done")
         print("--- Training session completed ---")
 
 def predict_model(data, socketio):
@@ -160,6 +174,7 @@ def predict_model(data, socketio):
                 index = access_points[bssid]
                 rssi_values[index] = entry["rssi"]
 
+        rssi_values = standardize_predict(rssi_values)
         # Reshape the array into a 2D array with a single row
         rssi_values_2d = rssi_values.reshape(1, -1)
 
@@ -177,4 +192,5 @@ def predict_model(data, socketio):
             label_probabilities.sort(key=lambda x: x["probability"], reverse=True)
         
         print("--- Prediction session completed ---")
+        # socketio.emit("message", label_probabilities[:3])
         socketio.emit("predict_%s" % data['clientId'], label_probabilities[:3])
