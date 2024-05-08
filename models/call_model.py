@@ -125,12 +125,12 @@ def train_model():
         calibrated_knn = CalibratedClassifierCV(estimator = KNeighborsClassifier(), method='sigmoid')
         tuned_params = [
             {
-                'estimator__n_neighbors': [2]
-            }      
+                'estimator__n_neighbors': [2],
 
-                #  'estimator__weights': ['uniform', 'distance'],
-                # 'estimator__algorithm': ['ball_tree', 'kd_tree','brute'],
-                # 'estimator__metric': ['cityblock', 'euclidean'],
+                 'estimator__weights': ['distance'],
+                'estimator__algorithm': ['brute'],
+                'estimator__metric': ['cityblock'],
+            }
         ]
 
         knn_tuned = GridSearchCV (
