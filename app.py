@@ -12,11 +12,9 @@ from geventwebsocket.handler import WebSocketHandler
 from sqlalchemy import text
 from findmyself import app
 
-# def run():
 load_dotenv(override=True)
 # database connection
 print(os.environ.get('DATABASE_URI', "postgresql://postgres:findmyself123@34.101.69.150:5432"))
-
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI', "postgresql://postgres:findmyself123@34.101.69.150:5432")
 
@@ -34,12 +32,4 @@ socketio.init_app(app, cors_allowed_origins="*")
 
 if __name__ == '__main__':
     attachListener(socketio)
-    socketio.run(app, debug=True)
-    # server = pywsgi.WSGIServer(("", 5000), app, handler_class=WebSocketHandler)
-    
-    # # Set the number of worker processes to 2
-    # server.spawn = 6
-
-    # # Start the server
-    # server.serve_forever()
-
+    socketio.run(app, debug=False, allow_unsafe_werkzeug=True)
