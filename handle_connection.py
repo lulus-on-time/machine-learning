@@ -1,5 +1,4 @@
 from flask import Flask
-from data.aps import access_points
 import pickle 
 import numpy as np
 from flask_socketio import send, emit, SocketIO
@@ -7,7 +6,6 @@ import logging
 from sklearn.metrics import make_scorer, accuracy_score
 from models.call_model import model, predict_model, train_model, update_bssid, build_df
 from classes import execute
-from thread import flask_context_thread
 import threading
 import concurrent.futures
 from celery.result import AsyncResult
