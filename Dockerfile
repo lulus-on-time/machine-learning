@@ -20,6 +20,3 @@ LABEL name="mls-lulus on time"
 LABEL version="1.0.0"
 
 EXPOSE 5000
-
-
-

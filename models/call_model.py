@@ -8,10 +8,6 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
 from findmyself import app
-import gevent
-from celery import Celery
-import time
-import logging
 
 global access_points
 access_points = {}
@@ -94,8 +90,6 @@ def fetch_data():
     }
 
 def update_bssid(features):
-    # bssid = pd.DataFrame(data["network"].fetchall(), columns=data["network"].keys())['bssid'].to_list()
-    # print(features)
     updated_access_points = {}
     
     count = 0
@@ -105,7 +99,6 @@ def update_bssid(features):
 
     return updated_access_points
 
-# @celery.task
 def train_model():
     
     print("--- Training session started ---")
