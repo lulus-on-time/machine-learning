@@ -113,7 +113,6 @@ def train_model():
         tuned_params = [
             {
                 'estimator__n_neighbors': [2],
-
                  'estimator__weights': ['distance'],
                 'estimator__algorithm': ['brute'],
                 'estimator__metric': ['cityblock'],
