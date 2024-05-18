@@ -14,11 +14,12 @@ from findmyself import app
 
 load_dotenv(override=True)
 # database connection
-print(os.environ.get('DATABASE_URI', "postgresql://postgres:findmyself123@34.101.69.150:5432"))
+# print(os.environ.get('DATABASE_URI', "postgresql://postgres:findmyself123@34.101.69.150:5432"))
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI', "postgresql://postgres:findmyself123@34.101.69.150:5432")
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}  
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:findmyself123@34.101.69.150:5432'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:ta@localhost:5431'
 
 db.init_app(app)
 
@@ -34,4 +35,4 @@ socketio.init_app(app, cors_allowed_origins="*")
 
 if __name__ == '__main__':
     attachListener(socketio)
-    socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
