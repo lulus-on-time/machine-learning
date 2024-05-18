@@ -11,11 +11,12 @@ from findmyself import app
 import logging
 import sys
 from models.fake import Fake
+from flask_celery import make_celery
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', handlers=[logging.StreamHandler(sys.stdout)])
-
 logger = logging.getLogger()
+celery = make_celery(app)
 
 global access_points
 access_points = {}
@@ -25,7 +26,7 @@ def init_model():
             model = pickle.load(f)
         return model
     except Exception: 
-        print("knn.pkl not available in models folder")
+        logger.debug("knn.pkl not available in models folder")
         return None
 
 def get_features():
@@ -34,12 +35,13 @@ def get_features():
             features = pickle.load(f)
         return features
     except Exception:
-        print("features.pkl not available in models folder")
+        logger.debug("features.pkl not available in models folder")
         return []
 
 model = init_model()
 features = get_features()
-flag = False
+logger.debug("Content of features variable in beginning")
+logger.debug(features)
 
 def build_df():
     data = fetch_data()
@@ -107,19 +109,22 @@ def update_bssid(features):
 
     return updated_access_points
 
+@celery.task(name="task.message")
 def train_model():
-    
-    print("--- Training session started ---")
+    logger.debug("--- Training session started ---")
     with app.app_context():
         df = build_df()
+
         if df.empty:
             logger.error("DataFrame is empty. Training cannot proceed.")
             knn_tuned = Fake()
             columns = ['fake']
+
         else:
             X = standardize(df.drop(['locationId'], axis=1))
             columns = df.columns.to_list()
             columns.remove('locationId')
+
             y = df.locationId
 
             calibrated_knn = CalibratedClassifierCV(estimator = KNeighborsClassifier(), method='sigmoid')
@@ -142,27 +147,26 @@ def train_model():
             )
 
             knn_tuned.fit(X, y)
+            
+        with open("models/features.pkl", "wb") as f:
+            pickle.dump(columns, f)
 
         with open("models/knn.pkl", "wb") as f:
             pickle.dump(knn_tuned, f)
 
-        with open("models/features.pkl", "wb") as f:
-            pickle.dump(columns, f)
-
-        global model
-        global features
-        model = init_model()
-        features = get_features()
-        
-        print("--- Training session completed ---")
+        # logger.error("Content of features variable in training")
+        # logger.error(features)
+        logger.debug("--- Training session completed ---")
 
 def predict_model(data, socketio):
     with app.app_context():
-        print("--- Prediction session started ---")
+        logger.debug("--- Prediction session started ---")
 
+        features = get_features()
+        model = init_model()
         if(features[0] == 'fake'):
             prediction_probabilities = model.predict_proba()
-            print("--- Prediction session completed ---")
+            logger.debug("--- Prediction session completed ---")
             socketio.emit("predict_%s" % data['clientId'], prediction_probabilities)
         
         else:
@@ -193,5 +197,5 @@ def predict_model(data, socketio):
                 # Sort the list based on probabilities in descending order
                 label_probabilities.sort(key=lambda x: x["probability"], reverse=True)
             
-            print("--- Prediction session completed ---")
+            logger.debug("--- Prediction session completed ---")
             socketio.emit("predict_%s" % data['clientId'], label_probabilities[:3])

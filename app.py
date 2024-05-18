@@ -1,38 +1,29 @@
 from gevent import monkey; monkey.patch_all()
-from flask import Flask
 from classes import execute
 from database import db
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 import os
 from flask_socketio import SocketIO
 from handle_connection import attachListener
 from flask_cors import CORS
-from gevent import pywsgi
-from geventwebsocket.handler import WebSocketHandler
-from sqlalchemy import text
 from findmyself import app
+from models.call_model import train_model
 
 load_dotenv(override=True)
-# database connection
-# print(os.environ.get('DATABASE_URI', "postgresql://postgres:findmyself123@34.101.69.150:5432"))
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI', "postgresql://postgres:findmyself123@34.101.69.150:5432")
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}  
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:findmyself123@34.101.69.150:5432'
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:ta@localhost:5431'
-
-db.init_app(app)
+app.config['SOCKETIO_REDIS_URL'] = 'redis://localhost:6379/0'
 
 with app.app_context():
     db.reflect()
 
 classes = execute()
+train_model.delay()
 
 # initialize socket io
-socketio = SocketIO(app, async_handlers=True, async_mode='threading', logger=True, always_connect=True)
+socketio = SocketIO(app, async_handlers=True, async_mode = 'gevent', logger=True, always_connect=True, message_queue=app.config['SOCKETIO_REDIS_URL'])
 CORS(app, origins='*')
 socketio.init_app(app, cors_allowed_origins="*")
 
 if __name__ == '__main__':
     attachListener(socketio)
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=True)
