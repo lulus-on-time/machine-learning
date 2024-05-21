@@ -15,7 +15,9 @@ def attachListener(socketio):
         socketio.emit("message", "on training handler function")
         if data['command'] == 'Train!':
             train_model.delay()
-            
+            train_model.delay()
+            train_model.delay()
+        
         elif data['command'] == 'Test!':
             build_df()
 

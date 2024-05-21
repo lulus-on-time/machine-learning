@@ -154,8 +154,6 @@ def train_model():
         with open("models/knn.pkl", "wb") as f:
             pickle.dump(knn_tuned, f)
 
-        # logger.error("Content of features variable in training")
-        # logger.error(features)
         logger.debug("--- Training session completed ---")
 
 def predict_model(data, socketio):
@@ -164,6 +162,7 @@ def predict_model(data, socketio):
 
         features = get_features()
         model = init_model()
+
         if(features[0] == 'fake'):
             prediction_probabilities = model.predict_proba()
             logger.debug("--- Prediction session completed ---")

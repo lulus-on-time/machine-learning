@@ -1,1 +1,7 @@
-.git
+.git/
+models/features.pkl
+models/knn.pkl
+notebook/
+**/__pycache__/
+.gitignore
+env/
