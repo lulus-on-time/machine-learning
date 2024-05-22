@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(mes
 logger = logging.getLogger()
 load_dotenv(override=True)
 
-app.config['SOCKETIO_REDIS_URL'] = 'redis://34.101.77.142:6379/0'
+app.config['SOCKETIO_REDIS_URL'] = 'redis://34.128.94.15:6379/0'
 
 with app.app_context():
     db.reflect()
