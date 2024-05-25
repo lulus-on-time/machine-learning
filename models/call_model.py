@@ -136,7 +136,6 @@ def train_model():
                     'estimator__metric': ['cityblock'],
                 }
             ]
-
             knn_tuned = GridSearchCV (
                 calibrated_knn,
                 tuned_params,
