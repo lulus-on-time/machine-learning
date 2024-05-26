@@ -7,7 +7,7 @@ from flask_socketio import SocketIO
 from handle_connection import attachListener
 from flask_cors import CORS
 from findmyself import app
-from models.call_model import train_model
+from models.call_model import train_sam
 import time
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', handlers=[logging.StreamHandler(sys.stdout)])
@@ -15,27 +15,24 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(mes
 logger = logging.getLogger()
 load_dotenv(override=True)
 
-app.config['SOCKETIO_REDIS_URL'] = 'redis://34.128.94.15:6379/0'
-
 with app.app_context():
     db.reflect()
 
 classes = execute()
 
 # initialize socket io
-socketio = SocketIO(app, async_handlers=True, async_mode = 'gevent', logger=True, always_connect=True, message_queue=app.config['SOCKETIO_REDIS_URL'])
+socketio = SocketIO(app, async_handlers=True, logger=True, always_connect=True)
 CORS(app, origins='*')
 socketio.init_app(app, cors_allowed_origins="*")
 
-time.sleep(7)
-train_model.delay()
-time.sleep(7)
-train_model.delay()
-time.sleep(7)
-train_model.delay()
-time.sleep(7)
-train_model.delay()
+response = train_sam()
+global model
+global features
+global access_points
+model = response.get("model")
+features = response.get("features")
+access_points = response.get("access_points")
 
 if __name__ == '__main__':
-    attachListener(socketio)
-    socketio.run(app, debug=False, host='0.0.0.0', port=5000)
+    attachListener(socketio, model, features, access_points)
+    socketio.run(app, debug=False, host='0.0.0.0', port=5001)
