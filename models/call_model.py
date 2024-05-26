@@ -202,9 +202,9 @@ def predict_model(data, socketio):
 def predict_sam(model, features, access_points, data):
     logger.debug("--- Prediction session started (Sam) ---")
     if(features[0] == 'fake'):
-            prediction_probabilities = model.predict_proba()
-            logger.debug("--- Prediction session completed ---")
-            return prediction_probabilities[:1]
+        prediction_probabilities = model.predict_proba()
+        logger.debug("--- Prediction session completed ---")
+        return prediction_probabilities[:1]
         
     else:
         num_bssids = len(access_points)
@@ -273,6 +273,10 @@ def train_sam():
             )
 
             knn_tuned.fit(X, y)
+
+        logger.debug("Content of trained model (hyperparameter tuning)")
+        logger.debug(knn_tuned)
+        # logger.debug(knn_tuned.)
             
         with open("models/features.pkl", "wb") as f:
             pickle.dump(columns, f)
