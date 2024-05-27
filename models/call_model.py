@@ -12,6 +12,7 @@ import logging
 import sys
 from models.fake import Fake
 from concurrent.futures import ProcessPoolExecutor
+import psycopg2 as p
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', handlers=[logging.StreamHandler(sys.stdout)])
@@ -25,15 +26,6 @@ def init_model():
     except Exception: 
         logger.debug("knn.pkl not available in models folder")
         return None
-
-def get_features():
-    try:
-        with open("models/features.pkl", "rb") as f:
-            features = pickle.load(f)
-        return features
-    except Exception:
-        logger.debug("features.pkl not available in models folder")
-        return []
 
 def build_df():
     data = fetch_data()
@@ -101,104 +93,6 @@ def update_bssid(features):
 
     return updated_access_points
 
-def train_model():
-    logger.debug("--- Training session started ---")
-    with app.app_context():
-        df = build_df()
-
-        if df.empty:
-            logger.error("DataFrame is empty. Training cannot proceed.")
-            knn_tuned = Fake()
-            columns = ['fake']
-
-        else:
-            X = standardize(df.drop(['locationId'], axis=1))
-            columns = df.columns.to_list()
-            columns.remove('locationId')
-
-            y = df.locationId
-
-            calibrated_knn = CalibratedClassifierCV(estimator = KNeighborsClassifier(), method='sigmoid')
-            tuned_params = [
-                {
-                    'estimator__n_neighbors': [2],
-                    'estimator__weights': ['distance'],
-                    'estimator__algorithm': ['brute'],
-                    'estimator__metric': ['cityblock'],
-                }
-            ]
-
-            knn_tuned = GridSearchCV (
-                calibrated_knn,
-                tuned_params,
-                scoring="accuracy",
-                cv=10,
-                verbose = 3,
-                error_score='raise'
-            )
-
-            knn_tuned.fit(X, y)
-            
-        with open("models/features.pkl", "wb") as f:
-            pickle.dump(columns, f)
-
-        with open("models/knn.pkl", "wb") as f:
-            pickle.dump(knn_tuned, f)
-
-        global model
-        global features
-        global access_points
-
-        model = init_model()
-
-        features = get_features()
-
-        access_points = update_bssid(features)
-            
-        logger.debug("--- Training session completed ---")
-
-def predict_model(data, socketio):
-    with app.app_context():
-        logger.debug("--- Prediction session started ---")
-
-        global model
-        global features
-        global access_points
-
-        if(features[0] == 'fake'):
-            prediction_probabilities = model.predict_proba()
-            socketio.emit("predict_%s" % data['clientId'], prediction_probabilities)
-            logger.debug("--- Prediction session completed ---")
-        
-        else:
-            num_bssids = len(access_points)
-            rssi_values = np.zeros(num_bssids)
-            # Populate the array according to the mapping from the access_points dictionary
-            for entry in data["data"]:
-                bssid = entry["bssid"]
-                if bssid in access_points:
-                    index = access_points[bssid]
-                    rssi_values[index] = entry["rssi"]
-
-            rssi_values = standardize_predict(rssi_values)
-            # Reshape the array into a 2D array with a single row
-            rssi_values_2d = rssi_values.reshape(1, -1)
-
-            prediction_probabilities = model.predict_proba(rssi_values_2d)
-            label_probabilities = []
-            class_labels = model.classes_
-
-            # Iterate over the predicted probabilities and corresponding class labels
-            for probs in prediction_probabilities:
-                for label, prob in zip(class_labels, probs):
-                    label = int(label)
-                    label_probabilities.append({"locationId": label, "probability": prob})
-
-                # Sort the list based on probabilities in descending order
-                label_probabilities.sort(key=lambda x: x["probability"], reverse=True)
-            
-            socketio.emit("predict_%s" % data['clientId'], label_probabilities[:3])
-            logger.debug("--- Prediction session completed ---")
 
 def predict_sam(model, features, access_points, data):
     logger.debug("--- Prediction session started (Sam) ---")

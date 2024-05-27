@@ -1,16 +1,23 @@
 from models.call_model import predict_sam, train_sam, build_df
 from concurrent.futures import ProcessPoolExecutor
+import multiprocessing
+from flask_socketio import SocketIO
 
+predict_executor = ProcessPoolExecutor(mp_context=multiprocessing.get_context("fork"))
+train_executor = ProcessPoolExecutor(mp_context=multiprocessing.get_context("fork"))
 
-def attachListener(socketio, init_model, init_features, init_access_points):
+def attachListener(socketio: SocketIO, init_ml_dict):
+    global ml_dict
+    ml_dict = init_ml_dict
 
-    global model
-    global features
-    global access_points
+    global predict_executor
+    global train_executor
 
-    model = init_model
-    features = init_features
-    access_points = init_access_points
+    # def init_predict(init_ml_dict, init_socketio):
+    #     global ml_dict
+    #     global socketio
+    #     ml_dict = init_ml_dict
+    #     socketio = init_socketio
 
     @socketio.on('connect')
     def handle_connect():
@@ -24,36 +31,25 @@ def attachListener(socketio, init_model, init_features, init_access_points):
     def train(data):
         socketio.emit("message", "on training handler function")
         if data['command'] == 'Train!':
-            with ProcessPoolExecutor() as executor:
-                train_job = executor.submit(train_sam)
-                try:
-                    response = train_job.result()
-                    global model
-                    global features
-                    global access_points
-                    model = response.get("model")
-                    features = response.get("features")
-                    access_points = response.get("access_points")
-                except Exception as e:
-                    print("Something went wrong in train.")
-                    print(repr(e))
+            train_job = train_executor.submit(train_sam)
+            response = train_job.result()
+            global ml_dict
+            ml_dict = response
+            global predict_executor
+            delete_executor = predict_executor
+            predict_executor = ProcessPoolExecutor(mp_context=multiprocessing.get_context("fork"))
+            delete_executor.shutdown()
 
         
         elif data['command'] == 'Test!':
             build_df()
+        
 
     @socketio.on('predict')
     def predict(data):
-        with ProcessPoolExecutor() as executor:
-            global model
-            global features
-            global access_points
-            predict_job = executor.submit(predict_sam, model, features, access_points, data)
-            try:
-                result = predict_job.result()
-                socketio.emit("predict_%s" % data['clientId'], result)
-            except Exception as e:
-                print("Something went wrong in predict")
-                print(repr(e))
+        global ml_dict
+        predict_job = predict_executor.submit(predict_sam, ml_dict['model'], ml_dict['features'], ml_dict['access_points'], data)
+        result = predict_job.result()
+        socketio.emit("predict_%s" % data['clientId'], result)
 
         
