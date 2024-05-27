@@ -27,17 +27,14 @@ def init_model():
         logger.debug("knn.pkl not available in models folder")
         return None
 
-def build_df():
-    data = fetch_data()
-    network_df = pd.DataFrame(data["network"].fetchall(), columns=data["network"].keys())
-    fingerprint_df = pd.DataFrame(data["fingerprint"].fetchall(), columns=data["fingerprint"].keys())
-    fingerprint_detail_df = pd.DataFrame(data["fingerprint_detail"].fetchall(), columns=data["fingerprint_detail"].keys())
+def build_df(data):
+    network_df = pd.DataFrame(data["network"])
+    fingerprint_df = pd.DataFrame(data["fingerprint"])
+    fingerprint_detail_df = pd.DataFrame(data["fingerprint_detail"])
 
     # transform rssi & bssid values -> digestible for the model -> turn into dataframe
     merged_df = pd.merge(fingerprint_df, fingerprint_detail_df, left_on='id', right_on='fingerprintId')
-    merged_df = pd.merge(merged_df, network_df, on='bssid')
-
-    df = merged_df.drop(['id_x','id_y','createdAt','apId', 'ssid'], axis=1)
+    df = pd.merge(merged_df, network_df, on='bssid')
 
     # Pivot dataframe
     df['locationId-fingerprintId'] = df['locationId'].astype('str') + '-' + df['fingerprintId'].astype('str')
@@ -70,19 +67,6 @@ def standardize_predict(X):
 
     return X_scaled
 
-def fetch_data():
-    network = db.session.execute(text('SELECT * FROM "Network"'))
-    access_point = db.session.execute(text('SELECT * FROM "AccessPoint"'))
-    fingerprint = db.session.execute(text('SELECT * FROM "Fingerprint"'))
-    fingerprint_detail = db.session.execute(text('SELECT * FROM "FingerprintDetail"'))
-
-    return {
-        "access_point" : access_point,
-        "fingerprint" : fingerprint, 
-        "fingerprint_detail" : fingerprint_detail,
-        "network": network
-    }
-
 def update_bssid(features):
     updated_access_points = {}
     
@@ -93,9 +77,8 @@ def update_bssid(features):
 
     return updated_access_points
 
-
-def predict_sam(model, features, access_points, data):
-    logger.debug("--- Prediction session started (Sam) ---")
+def predict(model, features, access_points, data):
+    logger.debug("--- Prediction session started ---")
     if(features[0] == 'fake'):
         prediction_probabilities = model.predict_proba()
         logger.debug("--- Prediction session completed ---")
@@ -131,10 +114,10 @@ def predict_sam(model, features, access_points, data):
         logger.debug("--- Prediction session completed ---")
         return label_probabilities[:1]
     
-def train_sam():
+def train(data):
     logger.debug("--- Training session started ---")
     with app.app_context():
-        df = build_df()
+        df = build_df(data)
 
         if df.empty:
             logger.error("DataFrame is empty. Training cannot proceed.")
@@ -168,10 +151,6 @@ def train_sam():
             )
 
             knn_tuned.fit(X, y)
-
-        logger.debug("Content of trained model (hyperparameter tuning)")
-        logger.debug(knn_tuned)
-        # logger.debug(knn_tuned.)
             
         with open("models/features.pkl", "wb") as f:
             pickle.dump(columns, f)

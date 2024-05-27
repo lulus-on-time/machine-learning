@@ -1,4 +1,4 @@
-from models.call_model import predict_sam, train_sam, build_df
+from models.call_model import predict, train, build_df
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 from flask_socketio import SocketIO
@@ -31,7 +31,8 @@ def attachListener(socketio: SocketIO, init_ml_dict):
     def train(data):
         socketio.emit("message", "on training handler function")
         if data['command'] == 'Train!':
-            train_job = train_executor.submit(train_sam)
+            train(data)
+            train_job = train_executor.submit(train)
             response = train_job.result()
             global ml_dict
             ml_dict = response
@@ -39,7 +40,6 @@ def attachListener(socketio: SocketIO, init_ml_dict):
             delete_executor = predict_executor
             predict_executor = ProcessPoolExecutor(mp_context=multiprocessing.get_context("fork"))
             delete_executor.shutdown()
-
         
         elif data['command'] == 'Test!':
             build_df()
@@ -48,7 +48,7 @@ def attachListener(socketio: SocketIO, init_ml_dict):
     @socketio.on('predict')
     def predict(data):
         global ml_dict
-        predict_job = predict_executor.submit(predict_sam, ml_dict['model'], ml_dict['features'], ml_dict['access_points'], data)
+        predict_job = predict_executor.submit(predict, ml_dict['model'], ml_dict['features'], ml_dict['access_points'], data)
         result = predict_job.result()
         socketio.emit("predict_%s" % data['clientId'], result)
 
