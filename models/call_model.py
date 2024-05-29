@@ -18,15 +18,6 @@ import psycopg2 as p
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', handlers=[logging.StreamHandler(sys.stdout)])
 logger = logging.getLogger()
 
-def init_model():
-    try:
-        with open("models/knn.pkl", "rb") as f:
-            model = pickle.load(f)
-        return model
-    except Exception: 
-        logger.debug("knn.pkl not available in models folder")
-        return None
-
 def build_df(data):
     network_df = pd.DataFrame(data["network"])
     fingerprint_df = pd.DataFrame(data["fingerprint"])
@@ -77,7 +68,7 @@ def update_bssid(features):
 
     return updated_access_points
 
-def predict(model, features, access_points, data):
+def predict_sam(model, features, access_points, data):
     logger.debug("--- Prediction session started ---")
     if(features[0] == 'fake'):
         prediction_probabilities = model.predict_proba()
@@ -166,4 +157,89 @@ def train(data):
         logger.debug("--- Training session completed ---")
         return response
 
+def build_df_old():
+    data = fetch_data_old()
+    network_df = pd.DataFrame(data["network"].fetchall(), columns=data["network"].keys())
+    fingerprint_df = pd.DataFrame(data["fingerprint"].fetchall(), columns=data["fingerprint"].keys())
+    fingerprint_detail_df = pd.DataFrame(data["fingerprint_detail"].fetchall(), columns=data["fingerprint_detail"].keys())
 
+    # transform rssi & bssid values -> digestible for the model -> turn into dataframe
+    merged_df = pd.merge(fingerprint_df, fingerprint_detail_df, left_on='id', right_on='fingerprintId')
+    merged_df = pd.merge(merged_df, network_df, on='bssid')
+
+    df = merged_df.drop(['id_x','id_y','createdAt','apId', 'ssid'], axis=1)
+
+    # Pivot dataframe
+    df['locationId-fingerprintId'] = df['locationId'].astype('str') + '-' + df['fingerprintId'].astype('str')
+    
+    df = df.pivot_table(index='locationId-fingerprintId',columns='bssid', values='rssi', fill_value=0).reset_index()
+    df[['locationId', 'fingerprintId']] = df['locationId-fingerprintId'].str.extract(r'^(.*)-(\d+)$')
+
+    df.drop(columns=['fingerprintId','locationId-fingerprintId'], inplace=True)
+    df.columns.name=None
+    return df
+
+def fetch_data_old():
+    network = db.session.execute(text('SELECT * FROM "Network"'))
+    access_point = db.session.execute(text('SELECT * FROM "AccessPoint"'))
+    fingerprint = db.session.execute(text('SELECT * FROM "Fingerprint"'))
+    fingerprint_detail = db.session.execute(text('SELECT * FROM "FingerprintDetail"'))
+
+    return {
+        "access_point" : access_point,
+        "fingerprint" : fingerprint, 
+        "fingerprint_detail" : fingerprint_detail,
+        "network": network
+    }
+
+def init_train():
+    logger.debug("--- Training session started ---")
+    with app.app_context():
+        df = build_df_old()
+
+        if df.empty:
+            logger.error("DataFrame is empty. Training cannot proceed.")
+            knn_tuned = Fake()
+            columns = ['fake']
+
+        else:
+            X = standardize(df.drop(['locationId'], axis=1))
+            columns = df.columns.to_list()
+            columns.remove('locationId')
+
+            y = df.locationId
+
+            calibrated_knn = CalibratedClassifierCV(estimator = KNeighborsClassifier(), method='sigmoid')
+            tuned_params = [
+                {
+                    'estimator__n_neighbors': [2],
+                    'estimator__weights': ['distance'],
+                    'estimator__algorithm': ['brute'],
+                    'estimator__metric': ['cityblock'],
+                }
+            ]
+
+            knn_tuned = GridSearchCV (
+                calibrated_knn,
+                tuned_params,
+                scoring="accuracy",
+                cv=10,
+                verbose = 3,
+                error_score='raise'
+            )
+
+            knn_tuned.fit(X, y)
+            
+        with open("models/features.pkl", "wb") as f:
+            pickle.dump(columns, f)
+
+        with open("models/knn.pkl", "wb") as f:
+            pickle.dump(knn_tuned, f)
+
+        response = {}
+        response["model"] =  knn_tuned
+        response["features"] =  columns
+        response["access_points"] =  update_bssid(columns)
+            
+        logger.debug("--- Training session completed ---")
+        return response

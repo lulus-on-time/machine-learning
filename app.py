@@ -6,7 +6,7 @@ from flask_socketio import SocketIO
 from handle_connection import attachListener
 from flask_cors import CORS
 from findmyself import app
-from models.call_model import train
+from models.call_model import init_train
 import logging
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', handlers=[logging.StreamHandler(sys.stdout)])
@@ -25,6 +25,6 @@ CORS(app, origins='*')
 socketio.init_app(app, cors_allowed_origins="*")
 
 if __name__ == '__main__':
-    ml_dict = train()
+    ml_dict = init_train()
     attachListener(socketio, ml_dict)
     socketio.run(app, debug=False, host='0.0.0.0', port=5001, allow_unsafe_werkzeug=True)
