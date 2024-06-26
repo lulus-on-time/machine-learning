@@ -34,7 +34,7 @@ There are 2 set of data available for use. All of them are available in the <cod
 - The <code>29-04-2024</code> folder consists of 20 distinct locations (all classrooms, no corridors, and no other non-classrooms) collected from Gedung Baru Fasilkom UI. This data is used to select the optimal machine learning model (include training, validation, and testing phase).
 - The <code>22-05-2024</code> folder consists of several locations collected from Gedung Baru Fasilkom UI (**5th, 6th, and 7th floor only**) . This data is used to train and test the model that is already deployed in machine learning server (MLS).
 
-Note that each folder consists of several csv files. The files that are used for machine learning purposes are **Network.csv , Fingerprint.csv, and FingerprintDetai.csv**. All you need to do is to merge these 3 csv files. 
+Note that each folder consists of several csv files. The files that are used for machine learning purposes are **Network.csv , Fingerprint.csv, and FingerprintDetail.csv**. All you need to do is to merge these 3 csv files. 
 
 > For the full data processing, you can see it in the <code>models/call_model.py</code>, specifically in <code>build_df</code> function. All of the other csv files can be used in conjunction with the previously mentioned three csv files to further add more information for you own project.
 
