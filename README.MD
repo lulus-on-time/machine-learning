@@ -36,5 +36,5 @@ There are 2 set of data available for use. All of them are available in the <cod
 
 Note that each folder consists of several csv files. The files that are used for machine learning purposes are **Network.csv , Fingerprint.csv, and FingerprintDetail.csv**. All you need to do is to merge these 3 csv files. 
 
-> For the full data processing, you can see it in the <code>models/call_model.py</code>, specifically in <code>build_df</code> function. All of the other csv files can be used in conjunction with the previously mentioned three csv files to further add more information for you own project.
+> For the full data processing, you can see it in the <code>models/call_model.py</code>, specifically in <code>build_df</code> function. All of the other csv files can be used in conjunction with the previously mentioned three csv files to add more information for you own project.
 
